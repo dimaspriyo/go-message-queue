@@ -1,0 +1,5 @@
+FROM rabbitmq:management-alpine
+ENV RABBITMQ_DEFAULT_USER root
+ENV RABBITMQ_DEFAULT_PASS root
+ENV RABBITMQ_DEFAULT_VHOST rabbitmq
+RUN rabbitmq-plugins enable --offline rabbitmq_management rabbitmq_mqtt rabbitmq_federation_management rabbitmq_stomp
