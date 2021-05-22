@@ -33,13 +33,13 @@ func main() {
 		defer ch.Close()
 
 		err = ch.ExchangeDeclare(
-			"appQueue", // name
-			"fanout",   // type
-			true,       // durable
-			false,      // auto-deleted
-			false,      // internal
-			false,      // no-wait
-			nil,        // arguments
+			"appExchange", // name
+			"fanout",      // type
+			true,          // durable
+			false,         // auto-deleted
+			false,         // internal
+			false,         // no-wait
+			nil,           // arguments
 		)
 
 		info := Info{}
@@ -54,10 +54,10 @@ func main() {
 		}
 		body := string(str)
 		err = ch.Publish(
-			"appQueue", // exchange
-			"",         // routing key
-			false,      // mandatory
-			false,      // immediate
+			"appExchange", // exchange
+			"",            // routing key
+			false,         // mandatory
+			false,         // immediate
 			amqp.Publishing{
 				ContentType: "application/json",
 				Body:        []byte(body),
