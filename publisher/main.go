@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/streadway/amqp"
@@ -14,7 +15,7 @@ type Info struct {
 	Name      string `json:"name" faker:"first_name"`
 	IPv4      string `json:"ipv4" faker:"ipv4"`
 	Byte      int64  `json:"byte" faker:"boundary_start=500, boundary_end=99999"`
-	Timestamp string `json:"timestamp" faker:"timestamp"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 func main() {
@@ -48,10 +49,12 @@ func main() {
 			fmt.Println(err.Error())
 		}
 
+		info.Timestamp = time.Now().Unix()
 		str, err := json.Marshal(&info)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+
 		body := string(str)
 		err = ch.Publish(
 			"appExchange", // exchange

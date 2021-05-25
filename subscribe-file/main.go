@@ -1,10 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/streadway/amqp"
 )
+
+type Log struct {
+	Name      string `json:"name"`
+	IPv4      string `json:"ipv4"`
+	Byte      int64  `json:"byte"`
+	Timestamp int64  `json:"timestamp"`
+}
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -20,17 +29,6 @@ func main() {
 	ch, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
 	defer ch.Close()
-
-	err = ch.ExchangeDeclare(
-		"appExchange", // name
-		"fanout",      // type
-		true,          // durable
-		false,         // auto-deleted
-		false,         // internal
-		false,         // no-wait
-		nil,           // arguments
-	)
-	failOnError(err, "Failed to declare an exchange")
 
 	q, err := ch.QueueDeclare(
 		"appQueue", // name
@@ -67,6 +65,13 @@ func main() {
 	go func() {
 		for d := range msgs {
 			log.Printf(" [x] %s", d.Body)
+			file, err := os.OpenFile("activity.log", os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			defer file.Close()
+
+			file.Write(d.Body)
 		}
 	}()
 
