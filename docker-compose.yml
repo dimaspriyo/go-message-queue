@@ -31,6 +31,11 @@ services:
             - go-publish-subscribe    
         depends_on:
             - rabbitmq
+    grafana:
+        build:
+            context: ./grafana
+        ports:
+            - 3000:3000
 
 networks:
     go-publish-subscribe:
