@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/streadway/amqp"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func failOnError(err error, msg string) {
@@ -15,6 +19,17 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			panic(err)
+		}
+	}()
+	collection := client.Database("go-message-queue").Collection("subscribe-database")
+
 	conn, err := amqp.Dial("amqp://localhost:5672")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
