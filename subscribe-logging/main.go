@@ -1,12 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/streadway/amqp"
 )
+
+type Info struct {
+	Name      string `json:"name"`
+	IPv4      string `json:"ipv4"`
+	Byte      int64  `json:"byte"`
+	Timestamp int64  `json:"timestamp"`
+}
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -15,6 +23,13 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
+
+	file, err := os.OpenFile("application.log", os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer file.Close()
+
 	conn, err := amqp.Dial("amqp://localhost:5672")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -24,12 +39,12 @@ func main() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"subscribe-file-queue", // name
-		false,                  // durable
-		false,                  // delete when unused
-		true,                   // exclusive
-		false,                  // no-wait
-		nil,                    // arguments
+		"subscribe-logging-queue", // name
+		false,                     // durable
+		false,                     // delete when unused
+		true,                      // exclusive
+		false,                     // no-wait
+		nil,                       // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
@@ -55,19 +70,22 @@ func main() {
 
 	forever := make(chan bool)
 
+	var data Info
+
 	go func() {
 		for d := range msgs {
 			log.Printf(" [x] %s", d.Body)
-			file, err := os.OpenFile("activity.log", os.O_APPEND|os.O_WRONLY, 0644)
+			err = json.Unmarshal(d.Body, &data)
 			if err != nil {
-				fmt.Println(err.Error())
+				panic(err.Error())
 			}
-			defer file.Close()
 
-			file.Write(d.Body)
+			_, err = file.WriteString(fmt.Sprintf("\n%s##%s##%d##%d", data.Name, data.IPv4, data.Byte, data.Timestamp))
+			if err != nil {
+				panic(err.Error())
+			}
 		}
 	}()
-
 	log.Printf(" [*] Waiting for logs. To exit press CTRL+C")
 	<-forever
 }

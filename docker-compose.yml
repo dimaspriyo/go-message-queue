@@ -36,6 +36,5 @@ services:
             context: ./grafana
         ports:
             - 3000:3000
-
 networks:
     go-publish-subscribe:
