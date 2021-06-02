@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/streadway/amqp"
 )
 
@@ -37,6 +38,8 @@ func main() {
 	ch, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
 	defer ch.Close()
+
+	fluentdConfig := fluent.Config{}
 
 	q, err := ch.QueueDeclare(
 		"subscribe-logging-queue", // name
