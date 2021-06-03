@@ -23,12 +23,6 @@ func failOnError(err error, msg string) {
 
 func main() {
 
-	// file, err := os.OpenFile("application.log", os.O_APPEND|os.O_WRONLY, 0644)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-	// defer file.Close()
-
 	conn, err := amqp.Dial("amqp://localhost:5672")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -39,7 +33,7 @@ func main() {
 
 	fluentdConfig := fluent.Config{
 		FluentHost: "localhost",
-		FluentPort: 3000,
+		FluentPort: 24224,
 	}
 
 	logger, err := fluent.New(fluentdConfig)
@@ -84,23 +78,21 @@ func main() {
 
 	go func() {
 		for d := range msgs {
-			log.Printf(" [x] %s", d.Body)
 			err = json.Unmarshal(d.Body, &data)
 			if err != nil {
 				panic(err.Error())
 			}
-
-			// _, err = file.WriteString(fmt.Sprintf("\n%s##%s##%d##%d", data.Name, data.IPv4, data.Byte, data.Timestamp))
-			// if err != nil {
-			// 	panic(err.Error())
-			// }
+			log.Printf(" [x] %d", data.Byte)
 
 			var data = map[string]int64{
 				"byte": data.Byte,
 			}
-			err = logger.Post("go-subscribe-logging", data)
-			if err != nil {
-				panic(err.Error())
+
+			e := logger.Post("go-subscribe-logging.log", data)
+			if e != nil {
+				log.Println("Error while posting log: ", e)
+			} else {
+				log.Println("Success to post log")
 			}
 		}
 	}()
