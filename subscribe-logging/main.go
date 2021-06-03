@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/streadway/amqp"
@@ -25,11 +23,11 @@ func failOnError(err error, msg string) {
 
 func main() {
 
-	file, err := os.OpenFile("application.log", os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer file.Close()
+	// file, err := os.OpenFile("application.log", os.O_APPEND|os.O_WRONLY, 0644)
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	// defer file.Close()
 
 	conn, err := amqp.Dial("amqp://localhost:5672")
 	failOnError(err, "Failed to connect to RabbitMQ")
@@ -39,7 +37,16 @@ func main() {
 	failOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
-	fluentdConfig := fluent.Config{}
+	fluentdConfig := fluent.Config{
+		FluentHost: "localhost",
+		FluentPort: 3000,
+	}
+
+	logger, err := fluent.New(fluentdConfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer logger.Close()
 
 	q, err := ch.QueueDeclare(
 		"subscribe-logging-queue", // name
@@ -83,7 +90,15 @@ func main() {
 				panic(err.Error())
 			}
 
-			_, err = file.WriteString(fmt.Sprintf("\n%s##%s##%d##%d", data.Name, data.IPv4, data.Byte, data.Timestamp))
+			// _, err = file.WriteString(fmt.Sprintf("\n%s##%s##%d##%d", data.Name, data.IPv4, data.Byte, data.Timestamp))
+			// if err != nil {
+			// 	panic(err.Error())
+			// }
+
+			var data = map[string]int64{
+				"byte": data.Byte,
+			}
+			err = logger.Post("go-subscribe-logging", data)
 			if err != nil {
 				panic(err.Error())
 			}

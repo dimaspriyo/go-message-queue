@@ -36,5 +36,27 @@ services:
             context: ./grafana
         ports:
             - 3000:3000
+        networks:
+            - go-publish-subscribe
+    loki:
+        build:
+            context: ./loki
+        ports:
+            - 3100:3100
+        networks:
+            - go-publish-subscribe
+        depends_on:
+            - grafana
+    fluentd:
+        build:
+            context: fluentd
+        ports:
+            - 9880:9880
+            - 24224:24224
+        networks:
+            - go-publish-subscribe
+        depends_on:
+            - loki
+
 networks:
     go-publish-subscribe:
