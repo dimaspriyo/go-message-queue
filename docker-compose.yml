@@ -75,17 +75,21 @@ services:
             - go-publish-subscribe
         depends_on:
             - mongo
+            - rabbitmq
     subscribe-file:
         build:
             context: subscribe-file
         networks:
             - go-publish-subscribe
+        depends_on:
+            - rabbitmq
     subscribe-logging:
         build:
             context: subscribe-logging
         networks:
             - go-publish-subscribe
         depends_on:
+            - rabbitmq
             - fluentd
 networks:
     go-publish-subscribe:
