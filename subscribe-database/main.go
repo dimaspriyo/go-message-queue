@@ -28,15 +28,15 @@ func failOnError(err error, msg string) {
 
 func main() {
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	for {
-		ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017"))
 		if err != nil {
-			log.Println(err.Error())
+			log.Println(err)
 		} else {
 			client.Disconnect(ctx)
+			cancel()
 			break
 		}
 
@@ -63,7 +63,12 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017"))
+	if err != nil {
+		log.Println(err.Error())
+	}
 
 	collection := client.Database("go-message-queue").Collection("subscribe-database")
 
