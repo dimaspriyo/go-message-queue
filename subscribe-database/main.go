@@ -31,12 +31,12 @@ func main() {
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 
-		client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017"))
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017/"))
 		if err != nil {
 			log.Println(err)
 		} else {
-			client.Disconnect(ctx)
 			cancel()
+			client.Disconnect(ctx)
 			break
 		}
 
@@ -53,9 +53,41 @@ func main() {
 				if err != nil {
 					log.Println(err.Error())
 				} else {
+					for {
+						q, err := ch.QueueDeclare(
+							"subscribe-database-queue", // name
+							false,                      // durable
+							false,                      // delete when unused
+							true,                       // exclusive
+							false,                      // no-wait
+							nil,                        // arguments
+						)
+						if err != nil {
+							log.Println(err.Error())
+						} else {
+							for {
+								err = ch.QueueBind(
+									q.Name,        // queue name
+									"",            // routing key
+									"appExchange", // exchange
+									false,
+									nil,
+								)
+								if err != nil {
+									log.Println(err.Error())
+								} else {
+									break
+								}
+								time.Sleep(2 * time.Second)
+							}
+							break
+						}
+						time.Sleep(2 * time.Second)
+					}
 					ch.Close()
 					break
 				}
+				time.Sleep(2 * time.Second)
 			}
 			conn.Close()
 			break
@@ -65,7 +97,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017"))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017/"))
 	if err != nil {
 		log.Println(err.Error())
 	}
