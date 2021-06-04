@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/streadway/amqp"
@@ -40,6 +41,7 @@ func main() {
 			conn.Close()
 			break
 		}
+		time.Sleep(2 * time.Second)
 
 	}
 
@@ -64,6 +66,7 @@ func main() {
 			logger.Close()
 			break
 		}
+		time.Sleep(2 * time.Second)
 	}
 
 	logger, err := fluent.New(fluentdConfig)

@@ -1,4 +1,6 @@
 FROM golang:alpine
+WORKDIR /go/src/app
+
 # Build Golang outisde container
 COPY main .
 
