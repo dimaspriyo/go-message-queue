@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -20,31 +21,68 @@ type Info struct {
 
 func main() {
 	e := echo.New()
+
+	var conn *amqp.Connection
+	var ch *amqp.Channel
+
+	for {
+		con, err := amqp.Dial("amqp://rabbitmq:5672")
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			channel, err := con.Channel()
+			if err != nil {
+				log.Println(err.Error())
+			}
+
+			err = channel.ExchangeDeclare(
+				"appExchange", // name
+				"fanout",      // type
+				true,          // durable
+				false,         // auto-deleted
+				false,         // internal
+				false,         // no-wait
+				nil,           // arguments
+			)
+			if err != nil {
+				log.Println(err.Error())
+			}
+			channel.Close()
+			con.Close()
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	conn, err := amqp.Dial("amqp://rabbitmq:5672")
+	if err != nil {
+		log.Println(err.Error())
+	}
+	defer conn.Close()
+
+	ch, err = conn.Channel()
+	if err != nil {
+		log.Println(err.Error())
+	}
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		"appExchange", // name
+		"fanout",      // type
+		true,          // durable
+		false,         // auto-deleted
+		false,         // internal
+		false,         // no-wait
+		nil,           // arguments
+	)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	e.POST("", func(c echo.Context) error {
-		conn, err := amqp.Dial("amqp://localhost:5672")
-		if err != nil {
-			panic(err.Error())
-		}
-		defer conn.Close()
-
-		ch, err := conn.Channel()
-		if err != nil {
-			panic(err.Error())
-		}
-		defer ch.Close()
-
-		err = ch.ExchangeDeclare(
-			"appExchange", // name
-			"fanout",      // type
-			true,          // durable
-			false,         // auto-deleted
-			false,         // internal
-			false,         // no-wait
-			nil,           // arguments
-		)
 
 		info := Info{}
-		err = faker.FakeData(&info)
+		err := faker.FakeData(&info)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
