@@ -23,7 +23,27 @@ func failOnError(err error, msg string) {
 
 func main() {
 
-	conn, err := amqp.Dial("amqp://localhost:5672")
+	for {
+		conn, err := amqp.Dial("amqp://rabbitmq:5672")
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			for {
+				ch, err := conn.Channel()
+				if err != nil {
+					log.Println(err.Error())
+				} else {
+					ch.Close()
+					break
+				}
+			}
+			conn.Close()
+			break
+		}
+
+	}
+
+	conn, err := amqp.Dial("amqp://rabbitmq:5672")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -32,13 +52,23 @@ func main() {
 	defer ch.Close()
 
 	fluentdConfig := fluent.Config{
-		FluentHost: "localhost",
+		FluentHost: "fluentd",
 		FluentPort: 24224,
+	}
+
+	for {
+		logger, err := fluent.New(fluentdConfig)
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			logger.Close()
+			break
+		}
 	}
 
 	logger, err := fluent.New(fluentdConfig)
 	if err != nil {
-		panic(err.Error())
+		log.Println(err.Error())
 	}
 	defer logger.Close()
 
@@ -80,7 +110,7 @@ func main() {
 		for d := range msgs {
 			err = json.Unmarshal(d.Body, &data)
 			if err != nil {
-				panic(err.Error())
+				log.Println(err.Error())
 			}
 			log.Printf(" [x] %d", data.Byte)
 
