@@ -3,6 +3,7 @@ WORKDIR /go/src/app
 
 # Build Golang outisde container
 COPY main .
+COPY activity.log .
 
 # Build Golang inside container
 # RUN COPY . .

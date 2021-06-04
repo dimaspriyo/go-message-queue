@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/streadway/amqp"
 )
@@ -17,7 +18,7 @@ func failOnError(err error, msg string) {
 func main() {
 
 	for {
-		conn, err := amqp.Dial("amqp://localhost:5672")
+		conn, err := amqp.Dial("amqp://rabbitmq:5672")
 		if err != nil {
 			log.Println(err.Error())
 		} else {
@@ -33,10 +34,10 @@ func main() {
 			conn.Close()
 			break
 		}
-
+		time.Sleep(2 * time.Second)
 	}
 
-	conn, err := amqp.Dial("amqp://localhost:5672")
+	conn, err := amqp.Dial("amqp://rabbitmq:5672")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
