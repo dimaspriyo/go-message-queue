@@ -10,16 +10,16 @@
  
  ## Getting Started
 1. `sudo docker-compose up`
-2. Hit `http://localhost:1323`
+2. Hit `http://localhost:1323` for trigger publish action to RabbitMQ
 
-**subscriber 1** 
+**subscriber 1** <br /> 
 Check `subscribe-database` collection in `go-message-queue` MongoDB database with http://localhost:8081
 
-**subscriber 2** 
+**subscriber 2** <br />
 Check log file  if it gets append with <br />
 `sudo docker exec -it go-message-queue_subscribe-file_1 sh -c 'cat /go/src/app/activity.log'`
 
-**subscriber 3** 
+**subscriber 3** <br />
 1.  Login to grafana `http://localhost:3000` 
 2. Add new Loki datasource `http://localhost:3000/datasources/new`
  ![Index](screenshoots/loki-datasource.png "Login")
