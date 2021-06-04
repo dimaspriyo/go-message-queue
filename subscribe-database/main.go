@@ -30,15 +30,44 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@localhost:27017"))
-	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
-			panic(err)
+	for {
+		ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017"))
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			client.Disconnect(ctx)
+			break
 		}
-	}()
+
+		time.Sleep(2 * time.Second)
+	}
+
+	for {
+		conn, err := amqp.Dial("amqp://rabbitmq:5672")
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			for {
+				ch, err := conn.Channel()
+				if err != nil {
+					log.Println(err.Error())
+				} else {
+					ch.Close()
+					break
+				}
+			}
+			conn.Close()
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongo:27017"))
+
 	collection := client.Database("go-message-queue").Collection("subscribe-database")
 
-	conn, err := amqp.Dial("amqp://localhost:5672")
+	conn, err := amqp.Dial("amqp://rabbitmq:5672")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -84,7 +113,7 @@ func main() {
 
 			err := json.Unmarshal(d.Body, &data)
 			if err != nil {
-				panic(err.Error())
+				log.Println(err.Error())
 			}
 			_, err = collection.InsertOne(ctx, bson.D{
 				{Key: "name", Value: data.Name},
@@ -93,7 +122,7 @@ func main() {
 				{Key: "timestamp", Value: data.Timestamp}})
 
 			if err != nil {
-				panic(err.Error())
+				log.Println(err.Error())
 			}
 
 			fmt.Printf("Insert Name=%s, IPV4=%s, Byte=%d, Timestamp=%d", data.Name, data.IPv4, data.Byte, data.Timestamp)
